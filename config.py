@@ -1,11 +1,57 @@
 from pathlib import Path
 import json
 from typing import Any
+from pynput import keyboard
 
 CONFIG_FILE = Path("settings.json")
 
+
+def serialise_key(key: Any) -> str:
+    """
+    Convert a pynput key object or string into a serialisable string.
+
+    Args:
+        key: The key object or string to convert.
+
+    Returns:
+        str: A string value suitable for saving in settings.
+    """
+    if isinstance(key, keyboard.KeyCode):
+        return key.char or ""
+    if isinstance(key, keyboard.Key):
+        return key.name or str(key)
+    if isinstance(key, str):
+        return key
+    return str(key)
+
+
+def deserialise_key(key_string: str) -> Any:
+    """
+    Convert a stored key string back into a pynput key object.
+
+    Args:
+        key_string: The saved key representation.
+
+    Returns:
+        Any: A pynput key object, or the default key when parsing fails.
+    """
+    if not key_string:
+        return keyboard.Key.f6
+
+    candidate = key_string.strip().lower()
+    if candidate in keyboard.Key.__members__:
+        return getattr(keyboard.Key, candidate)
+
+    if candidate.startswith("key."):
+        candidate = candidate[4:]
+        if candidate in keyboard.Key.__members__:
+            return getattr(keyboard.Key, candidate)
+
+    return keyboard.KeyCode.from_char(candidate) if len(candidate) == 1 else keyboard.Key.f6 # f6 is the default
+
+
 DEFAULT_SETTINGS = {
-    "toggle_key": "f6",
+    "toggle_key": serialise_key(keyboard.Key.f6),
     "click_interval": 400,
     "always_on_top": False,
     "dark_mode": True,
@@ -49,7 +95,7 @@ def save_settings(settings: dict[str, Any]) -> dict:
         settings: Settings values to save.
 
     Returns:
-        dict: The full settings dictionary that was written to disk.
+        merged: The full settings dictionary that was written to disk.
     """
     merged = DEFAULT_SETTINGS.copy()
     merged.update(settings)

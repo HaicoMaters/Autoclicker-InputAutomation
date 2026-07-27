@@ -1,5 +1,7 @@
 import threading
 import time
+from typing import Any
+
 from pynput import keyboard, mouse
 
 TOGGLE_KEY = keyboard.Key.f6
@@ -12,7 +14,14 @@ key_listener = None
 clicker_thread = None
 
 
-def on_press(key):
+def on_press(key: Any):
+    """
+    Toggle the click loop when the configured hotkey is pressed.
+
+    Args:
+        key: The keyboard key that triggered the event.
+
+    """
     global clicking
     try:
         if key == TOGGLE_KEY:
@@ -21,17 +30,43 @@ def on_press(key):
         pass
 
 
-def set_clicking(enabled):
+def set_clicking(enabled: bool):
+    """
+    Enable or disable the click loop.
+
+    Args:
+        enabled: Whether clicking should be turned on.
+    """
     global clicking
     clicking = bool(enabled)
 
 
-def set_click_interval(interval_ms):
+def set_click_interval(interval_ms: int):
+    """
+    Set the delay between simulated clicks in milliseconds.
+
+    Args:
+        interval_ms: The interval between clicks.
+    """
     global click_interval_ms
     click_interval_ms = max(1, int(interval_ms))
 
 
+def set_toggle_key(key: Any):
+    """
+    Store the hotkey used to toggle the clicker.
+
+    Args:
+        key: The new hotkey to use.
+    """
+    global TOGGLE_KEY
+    TOGGLE_KEY = key
+
+
 def auto_clicker():
+    """
+    Run the click loop continuously until the process exits.
+    """
     global last_click_time
     while True:
         if clicking:
@@ -43,6 +78,12 @@ def auto_clicker():
 
 
 def listen_for_keys():
+    """
+    Start the keyboard listener if it is not already running.
+
+    Returns:
+        key_listener: The active keyboard listener instance.
+    """
     global key_listener
     if key_listener is not None:
         return key_listener
@@ -53,6 +94,12 @@ def listen_for_keys():
 
 
 def start_clicker():
+    """
+    Start the clicker thread if it is not already running.
+
+    Returns:
+        clicker_thread: The clicker thread instance.
+    """
     global clicker_thread
     if clicker_thread is None or not clicker_thread.is_alive():
         clicker_thread = threading.Thread(target=auto_clicker, daemon=True)
@@ -61,6 +108,9 @@ def start_clicker():
 
 
 def start_clicker_services():
+    """
+    Start both the keyboard listener and the clicker loop.
+    """
     listen_for_keys()
     start_clicker()
 
