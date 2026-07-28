@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Any, Callable
+from typing import Any
 
 from pynput import keyboard, mouse
 
@@ -13,6 +13,9 @@ last_click_time = 0.0
 key_listener = None
 clicker_thread = None
 
+"""
+Can work as a standalone autoclicker when ran but is restricted in use run the main for the full loadof features
+"""
 
 def on_press(key: Any):
     """
@@ -39,7 +42,6 @@ def set_clicking(enabled: bool):
     """
     global clicking
     clicking = bool(enabled)
-    _notify_state_listeners()
 
 
 def toggle_clicking() -> bool:
@@ -81,6 +83,12 @@ def set_toggle_key(key: Any):
     global TOGGLE_KEY
     TOGGLE_KEY = key
 
+def get_toggle_key():
+    """
+    Returns:
+        TOGGLE_KEY: The current hotkey.
+    """
+    return TOGGLE_KEY
 
 def auto_clicker():
     """
@@ -96,7 +104,7 @@ def auto_clicker():
         time.sleep(0.00001)
 
 
-def listen_for_keys():
+def listen_for_keys(): # only for when running via clicker.py and not using main/gui
     """
     Start the keyboard listener if it is not already running.
 
@@ -126,16 +134,17 @@ def start_clicker():
     return clicker_thread
 
 
-def start_clicker_services():
+def start_clicker_services(clickerOnly : bool = False):
     """
-    Start both the keyboard listener and the clicker loop.
+    Start both the keyboard listener (if ran on own) and the clicker loop.
     """
-    listen_for_keys()
+    if clickerOnly: # if ran with main and not solo then handle the keys on the main app side
+        listen_for_keys()
     start_clicker()
 
 
 if __name__ == "__main__":
     print("Basic clicker started. Press F6 to toggle clicking.")
-    start_clicker_services()
+    start_clicker_services(True)
     while True:
         time.sleep(1)
