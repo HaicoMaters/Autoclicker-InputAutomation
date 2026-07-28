@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Any
+from typing import Any, Callable
 
 from pynput import keyboard, mouse
 
@@ -25,7 +25,7 @@ def on_press(key: Any):
     global clicking
     try:
         if key == TOGGLE_KEY:
-            clicking = not clicking
+            set_clicking(not clicking)
     except Exception:
         pass
 
@@ -39,16 +39,35 @@ def set_clicking(enabled: bool):
     """
     global clicking
     clicking = bool(enabled)
+    _notify_state_listeners()
 
 
-def set_click_interval(interval_ms: int):
+def toggle_clicking() -> bool:
+    """Toggle the click loop and return its new state."""
+    set_clicking(not clicking)
+    return clicking
+
+
+def is_clicking() -> bool:
+    """
+    Returns the state of the clicker
+
+    Returns:
+        True or False
+    """
+    return clicking
+
+def set_click_interval(interval_ms : int, interval_secs : int = 0, interval_mins : int = 0):
     """
     Set the delay between simulated clicks in milliseconds.
 
     Args:
-        interval_ms: The interval between clicks.
+        interval_ms: The interval between clicks in milliseconds
+        interval_secs: The interval between clicks in seconds default as 0
+        interval_mins: The interval between clicks in minutes default as 0
     """
     global click_interval_ms
+    interval_ms = interval_mins * 60000 + interval_secs * 1000 + interval_ms
     click_interval_ms = max(1, int(interval_ms))
 
 
@@ -74,7 +93,7 @@ def auto_clicker():
             if now - last_click_time >= click_interval_ms / 1000:
                 mouse_controller.click(mouse.Button.left, 1)
                 last_click_time = now
-        time.sleep(0.001)
+        time.sleep(0.00001)
 
 
 def listen_for_keys():

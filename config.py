@@ -52,7 +52,9 @@ def deserialise_key(key_string: str) -> Any:
 
 DEFAULT_SETTINGS = {
     "toggle_key": serialise_key(keyboard.Key.f6),
-    "click_interval": 400,
+    "click_interval_mins": 0,
+    "click_interval_secs": 0,
+    "click_interval_ms": 400,
     "always_on_top": False,
     "dark_mode": True,
 }
