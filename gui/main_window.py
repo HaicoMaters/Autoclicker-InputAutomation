@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
         self._listen_for_keys()
         self._build_ui()
 
-    def _listen_for_keys(self):
+    def _listen_for_keys(self) -> keyboard.Listener:
         """
         Start the keyboard listener if it is not already running.
 
@@ -62,14 +62,14 @@ class MainWindow(QMainWindow):
         """
         container = QWidget(self)
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(12)
+        layout.setContentsMargins(16, 6, 16, 12)
+        layout.setSpacing(8)
         self.setCentralWidget(container)
 
         settings: dict[str, Any] = config.load_settings()
 
-        title = QLabel("Auto Clicker")
-        title.setStyleSheet("font-size: 18px; font-weight: 600;")
+        title = QLabel("Autoclicker")
+        title.setStyleSheet("font-size: 18px; font-weight: 800")
         layout.addWidget(title)
 
         # interval 
@@ -77,6 +77,9 @@ class MainWindow(QMainWindow):
         interval_group_layout = QVBoxLayout(interval_group)
         interval_group_layout.setContentsMargins(0, 0, 0, 0)
         interval_group_layout.setSpacing(8)
+        interval_group_label = QLabel("Time between click")
+        interval_group_label.setStyleSheet("font-size: 14px; font-weight: 600")
+        interval_group_layout.addWidget(interval_group_label)
 
         interval_row = self._build_interval_row("Minutes", settings.get("click_interval_mins", 0), 0, 99999999)
         interval_group_layout.addLayout(interval_row)
@@ -89,6 +92,9 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(interval_group)
 
+        # other things
+
+        layout.addStretch() # add stretch just before the buttons
         # buttons
         button_row = QHBoxLayout()
         button_row.setSpacing(8)
@@ -119,16 +125,16 @@ class MainWindow(QMainWindow):
         Create a labeled interval field row.
         """
         row = QHBoxLayout()
-        row.setSpacing(8)
+        row.setSpacing(5)
 
         label = QLabel(label_text)
-        label.setMinimumWidth(90)
+        label.setFixedWidth(90)
         row.addWidget(label)
 
         spinbox = QSpinBox()
         spinbox.setRange(minimum, maximum)
         spinbox.setValue(int(value))
-        spinbox.setMinimumWidth(90)
+        spinbox.setMinimumWidth(60)
         row.addWidget(spinbox, 1)
 
         if label_text == "Minutes":
