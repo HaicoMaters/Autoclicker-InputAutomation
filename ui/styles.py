@@ -5,6 +5,7 @@ QWidget (important for background)
 QLabel
 QPushButton
 QSpinBox
+QToolTip (set indirectly)
 
 """
 
@@ -54,6 +55,14 @@ QSpinBox:focus, QLineEdit:focus {
 
 QCheckBox {
     color: white;
+}
+
+QToolTip {
+background-color: #252525;
+    color: #ffffff;
+    border: 1px solid #555555;
+    padding: 6px;
+    border-radius: 4px;
 }
 """
 

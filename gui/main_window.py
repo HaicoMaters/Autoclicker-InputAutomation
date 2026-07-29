@@ -1,7 +1,7 @@
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QSpinBox, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QSpinBox, QVBoxLayout, QWidget, QCheckBox
 from pynput import keyboard
 import clicker
 import config
@@ -19,6 +19,8 @@ class MainWindow(QMainWindow):
         self.interval_field_ms: QSpinBox | None = None
         self.interval_field_secs: QSpinBox | None = None
         self.interval_field_mins: QSpinBox | None = None
+        self.random_offset_checkbox: QCheckBox | None = None
+        self.random_offset_field: QSpinBox | None = None
         self.start_button: QPushButton | None = None
         self.stop_button: QPushButton | None = None
         self.key_listener = None
@@ -77,24 +79,49 @@ class MainWindow(QMainWindow):
         interval_group_layout = QVBoxLayout(interval_group)
         interval_group_layout.setContentsMargins(0, 0, 0, 0)
         interval_group_layout.setSpacing(8)
+
         interval_group_label = QLabel("Time between click")
         interval_group_label.setStyleSheet("font-size: 14px; font-weight: 600")
         interval_group_layout.addWidget(interval_group_label)
 
-        interval_row = self._build_interval_row("Minutes", settings.get("click_interval_mins", 0), 0, 99999999)
+        interval_row = self._build_interval_row("Minutes", settings.get("click_interval_mins", 0), 0, 99999999) # minutes
         interval_group_layout.addLayout(interval_row)
 
-        interval_row = self._build_interval_row("Seconds", settings.get("click_interval_secs", 0), 0, 59)
+        interval_row = self._build_interval_row("Seconds", settings.get("click_interval_secs", 0), 0, 59) # seconds
         interval_group_layout.addLayout(interval_row)
 
-        interval_row = self._build_interval_row("Milliseconds", settings.get("click_interval_ms", 400), 0, 999)
+        interval_row = self._build_interval_row("Milliseconds", settings.get("click_interval_ms", 400), 0, 999) # miliseconds
         interval_group_layout.addLayout(interval_row)
+
+        # random interval offset
+        random_offset_row = QHBoxLayout()
+        random_offset_row.setSpacing(5)
+        
+        self.random_offset_checkbox = QCheckBox("Enable ± offset?")
+        self.random_offset_checkbox.setToolTip("Your current interval + or - a random number from 0 to your offset")
+        self.random_offset_checkbox.checkStateChanged.connect(self._on_offset_checkbox)
+        random_offset_row.addWidget(self.random_offset_checkbox)
+
+        random_offset_label = QLabel("Random offset (ms)")
+        random_offset_label.setFixedWidth(110)
+        random_offset_row.addWidget(random_offset_label)
+
+        self.random_offset_field = QSpinBox()
+        self.random_offset_field.setRange(0, 99999999)
+        self.random_offset_field.setValue(50)
+        self.random_offset_field.setMinimumWidth(60)
+        self.random_offset_field.valueChanged.connect(self._on_offset_update)
+        random_offset_row.addWidget(self.random_offset_field)
+
+        
+        interval_group_layout.addLayout(random_offset_row)
 
         layout.addWidget(interval_group)
 
-        # other things
+        # add other options here
 
         layout.addStretch() # add stretch just before the buttons
+
         # buttons
         button_row = QHBoxLayout()
         button_row.setSpacing(8)
@@ -161,7 +188,30 @@ class MainWindow(QMainWindow):
         ms = self.interval_field_ms.value()
         clicker.set_click_interval(ms, secs, mins)
 
-    def _on_start_clicked(self):
+    def _on_offset_update(self) -> None:
+        """
+        Update random offset when changed and random offset is enabled
+        """
+        if self.random_offset_field is None or not self.random_offset_checkbox.isChecked():
+            return
+        
+        offset = self.random_offset_field.value()
+        clicker.set_random_offset(offset)
+
+    def _on_offset_checkbox(self) -> None:
+        """
+        When offset is checked change offset in clicker to offset spinbox value
+        When offset is unchecked change offset in clicker to 0
+        """
+        if self.random_offset_checkbox is None or self.random_offset_field is None:
+            return
+
+        if (self.random_offset_checkbox.isChecked()):
+            clicker.set_random_offset(self.random_offset_field.value())
+        else:
+            clicker.set_random_offset(0)
+
+    def _on_start_clicked(self) -> None:
         """
         Start the clicker enable stop button, disable stop button and minimize window if current setting.
         """
@@ -172,7 +222,7 @@ class MainWindow(QMainWindow):
         if config.load_settings().get("auto_minimize") == True:
             self.showMinimized()
 
-    def _on_stop_clicked(self):
+    def _on_stop_clicked(self) -> None:
         """
         Stop the clicker enable start button, disable stop button.
         """
@@ -181,7 +231,7 @@ class MainWindow(QMainWindow):
         self.start_button.setEnabled(True)
         # maybe bring window back up if pressing hotkey when minimized
 
-    def _toggle_settings_window(self):
+    def _toggle_settings_window(self) -> None:
         """
         Show or hide the settings window for the main window.
         """

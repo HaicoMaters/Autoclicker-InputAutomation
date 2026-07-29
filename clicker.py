@@ -1,10 +1,11 @@
 import threading
 import time
 from typing import Any
+import random
 
 from pynput import keyboard, mouse
 
-TOGGLE_KEY = keyboard.Key.f6
+TOGGLE_KEY = keyboard.Key.f6 # only for running this as a solo file
 
 mouse_controller = mouse.Controller()
 clicking = False
@@ -12,6 +13,8 @@ click_interval_ms = 400
 last_click_time = 0.0
 key_listener = None
 clicker_thread = None
+random_offset = 0
+next_offset = 0
 
 """
 Can work as a standalone autoclicker when ran but is restricted in use run the main for the full loadof features
@@ -59,6 +62,16 @@ def is_clicking() -> bool:
     """
     return clicking
 
+def set_random_offset(offset : int):
+    """
+    Sets the range of the random offset between each click (-offset -> offset)
+
+    Args:
+        offset: the number of milliseconds to potentially offset each click by
+    """
+    global random_offset
+    random_offset = offset
+
 def set_click_interval(interval_ms : int, interval_secs : int = 0, interval_mins : int = 0):
     """
     Set the delay between simulated clicks in milliseconds.
@@ -95,12 +108,18 @@ def auto_clicker():
     Run the click loop continuously until the process exits.
     """
     global last_click_time
+    global next_offset
+    global random_offset
     while True:
         if clicking:
             now = time.time()
-            if now - last_click_time >= click_interval_ms / 1000:
+            if now - last_click_time >= (click_interval_ms + next_offset) / 1000:
                 mouse_controller.click(mouse.Button.left, 1)
                 last_click_time = now
+                if random_offset:
+                    next_offset = random.randint(-random_offset, random_offset)
+                else:
+                    next_offset = 0
         time.sleep(0.00001)
 
 
