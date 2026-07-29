@@ -1,0 +1,61 @@
+"""
+Custom stylesheets for the application windows
+Current list of things used that need to be included in each style
+QWidget (important for background)
+QLabel
+QPushButton
+QSpinBox
+
+"""
+
+#Dark Mode
+DARK_THEME="""
+QWidget {
+    background-color: #121212;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+QLabel {
+    color: #ffffff;
+}
+
+QPushButton {
+    background-color: #3c3c3c;
+    border: 1px solid #555555;
+    border-radius: 5px;
+    padding: 6px 12px;
+}
+
+QPushButton:hover {
+    background-color: #505050;
+}
+
+QPushButton:pressed {
+    background-color: #606060;
+}
+
+QPushButton:disabled {
+    background-color: #333333;
+    color: #777777;
+}
+
+QSpinBox, QLineEdit {
+    background-color: #3c3c3c;
+    color: white;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+QSpinBox:focus, QLineEdit:focus {
+    border: 1px solid #888888;
+}
+
+QCheckBox {
+    color: white;
+}
+"""
+
+# default theme (nothing changed currently)
+LIGHT_THEME=""""""

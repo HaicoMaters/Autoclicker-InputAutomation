@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QPushButton, QSpin
 
 import clicker
 import config
+from ui.theme_manager import apply_theme
 
 
 class SettingsWindow(QWidget):
@@ -155,7 +156,7 @@ class SettingsWindow(QWidget):
 
     def _save_changes(self) -> None:
         """
-        Persist the edited settings and close the settings window.
+        Persist the edited settings and close the settings window. Also change to dark theme if dark mode is changed
         """
         if self.interval_field_ms is None or self.interval_field_mins is None or self.interval_field_secs is None:
             return
@@ -176,6 +177,12 @@ class SettingsWindow(QWidget):
             auto_minimize = self.auto_minimize_box.isChecked() if self.auto_minimize_box is not None else True,
         )
         clicker.set_toggle_key(config.deserialise_key(self.selected_toggle_key_name))
+
+        if self.dark_mode_box is not None and self.dark_mode_box.isChecked():
+            apply_theme("dark_mode")
+        else:
+            apply_theme("light_mode")
+
         self.close()
 
     def _reset_changes(self) -> None:

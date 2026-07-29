@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 import clicker
 import config
 from gui.main_window import build_main_window
+from ui.theme_manager import apply_theme
 
 
 def main() -> int:
@@ -19,6 +20,12 @@ def main() -> int:
     app = QApplication(sys.argv)
     window = build_main_window()
     window.show()
+
+    if (settings.get("dark_mode") == True):
+        apply_theme("dark_mode")
+    else:
+        apply_theme("light_mode")
+
     return app.exec()
 
 

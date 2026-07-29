@@ -70,7 +70,7 @@ def set_click_interval(interval_ms : int, interval_secs : int = 0, interval_mins
     """
     global click_interval_ms
     interval_ms = interval_mins * 60000 + interval_secs * 1000 + interval_ms
-    click_interval_ms = max(1, int(interval_ms))
+    click_interval_ms = interval_ms
 
 
 def set_toggle_key(key: Any):
