@@ -6,7 +6,7 @@ Still in very early stages (is somewhat functional it autoclicks and you can cha
 ### ToDo
 - more learning/research into using PySide6 for actually making a proper gui compared to the constant googling for every small little thing rather than randomly placed buttons and input fields etc.
 - add planned features (e.g. designating areas of the screen to make so can only autoclick within or excluding designated area, or a random jitter/offset to time between click)
-- make the gui look good (settings window not scaleable etc.)
+- make the gui look good (not very scaleable etc.)
 - dark mode when gui reaches first good state
 - make window autohide when starting autoclick via the button (so it doesn't turn on and off again repeatedly)
 - add more control over interval for clicks (seconds, miliseconds etc.)
