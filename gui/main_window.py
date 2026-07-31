@@ -1,8 +1,8 @@
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QSpinBox, QVBoxLayout, QWidget, QCheckBox
-from pynput import keyboard
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QSpinBox, QVBoxLayout, QWidget, QCheckBox, QGroupBox, QComboBox
+from pynput import keyboard, mouse
 import clicker
 import config
 from gui.settings_window import SettingsWindow, build_settings_window
@@ -16,13 +16,20 @@ class MainWindow(QMainWindow):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.settings_window: SettingsWindow | None = None
+
         self.interval_field_ms: QSpinBox | None = None
         self.interval_field_secs: QSpinBox | None = None
         self.interval_field_mins: QSpinBox | None = None
+        
         self.random_offset_checkbox: QCheckBox | None = None
         self.random_offset_field: QSpinBox | None = None
+
+        self.mouse_button_combo: QComboBox | None = None
+        self.click_type_combo: QComboBox | None = None
+
         self.start_button: QPushButton | None = None
         self.stop_button: QPushButton | None = None
+
         self.key_listener = None
         self._listen_for_keys()
         self._build_ui()
@@ -75,13 +82,13 @@ class MainWindow(QMainWindow):
         layout.addWidget(title)
 
         # interval 
-        interval_group = QWidget(self)
+        interval_group = QGroupBox()
+        interval_group.setContentsMargins(1,1,1,1)
         interval_group_layout = QVBoxLayout(interval_group)
-        interval_group_layout.setContentsMargins(0, 0, 0, 0)
         interval_group_layout.setSpacing(8)
 
         interval_group_label = QLabel("Time between click")
-        interval_group_label.setStyleSheet("font-size: 14px; font-weight: 600")
+        interval_group_label.setStyleSheet("font-size: 12px; font-weight: 400")
         interval_group_layout.addWidget(interval_group_label)
 
         interval_row = self._build_interval_row("Minutes", settings.get("click_interval_mins", 0), 0, 99999999) # minutes
@@ -112,11 +119,44 @@ class MainWindow(QMainWindow):
         self.random_offset_field.setMinimumWidth(60)
         self.random_offset_field.valueChanged.connect(self._on_offset_update)
         random_offset_row.addWidget(self.random_offset_field)
-
         
         interval_group_layout.addLayout(random_offset_row)
 
         layout.addWidget(interval_group)
+
+        # click type and mouse button
+        click_type_box = QGroupBox()
+        click_type_box.setContentsMargins(1,1,1,1)
+        click_type_box_layout = QVBoxLayout(click_type_box)
+        click_type_box_layout.setSpacing(8)
+
+        mouse_button_row = QHBoxLayout()
+        mouse_button_row.setSpacing(5)
+
+        mouse_button_label = QLabel("Mouse button:")
+        mouse_button_label.setFixedWidth(90)
+        mouse_button_row.addWidget(mouse_button_label)
+
+        self.mouse_button_combo = QComboBox()
+        self.mouse_button_combo.addItems(["Left", "Right", "Middle"])
+        mouse_button_row.addWidget(self.mouse_button_combo)
+        click_type_box_layout.addLayout(mouse_button_row)
+
+        click_type_row = QHBoxLayout()
+        click_type_row.setSpacing(5)
+
+        click_type_label = QLabel("Click type:")
+        click_type_label.setFixedWidth(90)
+        click_type_row.addWidget(click_type_label)
+
+        self.click_type_combo = QComboBox()
+        self.click_type_combo.addItems(["Single", "Double"])
+        click_type_row.addWidget(self.click_type_combo)
+        click_type_box_layout.addLayout(click_type_row)
+
+        layout.addWidget(click_type_box)
+
+
 
         # add other options here
 
@@ -213,15 +253,16 @@ class MainWindow(QMainWindow):
 
     def _on_start_clicked(self) -> None:
         """
-        Start the clicker enable stop button, disable stop button and minimize window if current setting.
+        Start the clicker enable stop button, disable stop button and minimize window if current setting update the clicktype settings.
         """
         clicker.set_clicking(True)
+        self._update_click_type()
         self.stop_button.setEnabled(True)
         self.start_button.setEnabled(False)
 
         if config.load_settings().get("auto_minimize") == True:
             self.showMinimized()
-
+    
     def _on_stop_clicked(self) -> None:
         """
         Stop the clicker enable start button, disable stop button.
@@ -230,6 +271,25 @@ class MainWindow(QMainWindow):
         self.stop_button.setEnabled(False)
         self.start_button.setEnabled(True)
         # maybe bring window back up if pressing hotkey when minimized
+
+    def _update_click_type(self) -> None:
+        mouse_button = mouse.Button.left
+
+        match (self.mouse_button_combo.currentText()):
+            case "Right":
+                mouse_button = mouse.Button.right
+            case "Middle":
+                mouse_button = mouse.Button.middle
+            case _:
+                mouse_button = mouse.Button.left
+
+        click_count = 1
+
+        if (self.click_type_combo.currentText() == "Double"):
+            click_count = 2
+
+        clicker.set_number_of_clicks(click_count)
+        clicker.set_mouse_button(mouse_button)
 
     def _toggle_settings_window(self) -> None:
         """

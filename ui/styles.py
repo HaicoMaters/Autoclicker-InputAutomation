@@ -6,6 +6,7 @@ QLabel
 QPushButton
 QSpinBox
 QToolTip (set indirectly)
+QComboBox
 
 """
 
@@ -64,7 +65,20 @@ background-color: #252525;
     padding: 6px;
     border-radius: 4px;
 }
+
+QComboBox {
+    background-color: #3c3c3c;
+    color: #ffffff;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+
+QComboBox:hover {
+    border: 1px solid #777777;
+}
+
 """
 
 # default theme (nothing changed currently)
-LIGHT_THEME=""""""
+LIGHT_THEME=""" """

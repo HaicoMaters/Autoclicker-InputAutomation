@@ -13,6 +13,8 @@ click_interval_ms = 400
 last_click_time = 0.0
 key_listener = None
 clicker_thread = None
+number_of_clicks = 1
+mouse_button = mouse.Button.left
 random_offset = 0
 next_offset = 0
 
@@ -72,6 +74,26 @@ def set_random_offset(offset : int):
     global random_offset
     random_offset = offset
 
+def set_number_of_clicks(clicks : int):
+    """
+    Sets the number of clicks to perform per interval
+
+    Args:
+        clicks: number of clocks to carry per interval (usually single or double 1 or 2)
+    """
+    global number_of_clicks
+    number_of_clicks = clicks
+
+def set_mouse_button(button : mouse.Button):
+    """
+    Sets the mouse button to auto click with
+
+    Args:
+        button: the mouse button object left, right or middle
+    """
+    global mouse_button
+    mouse_button = button
+
 def set_click_interval(interval_ms : int, interval_secs : int = 0, interval_mins : int = 0):
     """
     Set the delay between simulated clicks in milliseconds.
@@ -107,14 +129,12 @@ def auto_clicker():
     """
     Run the click loop continuously until the process exits.
     """
-    global last_click_time
-    global next_offset
-    global random_offset
+    global last_click_time, mouse_button, number_of_clicks, next_offset, random_offset
     while True:
         if clicking:
             now = time.time()
             if now - last_click_time >= (click_interval_ms + next_offset) / 1000:
-                mouse_controller.click(mouse.Button.left, 1)
+                mouse_controller.click(mouse_button, number_of_clicks)
                 last_click_time = now
                 if random_offset:
                     next_offset = random.randint(-random_offset, random_offset)
