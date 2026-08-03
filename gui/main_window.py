@@ -1,11 +1,16 @@
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QSpinBox, QVBoxLayout, QWidget, QCheckBox, QGroupBox, QComboBox
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QPushButton, QSpinBox, QVBoxLayout, QWidget, QCheckBox, QGroupBox, QComboBox, QRadioButton, QButtonGroup
+from PySide6.QtWidgets import QAbstractSpinBox
 from pynput import keyboard, mouse
 import clicker
 import config
 from gui.settings_window import SettingsWindow, build_settings_window
+from screen.mouse_recorder import MouseRecorder
+import time
+from screen.monitor import Monitor, get_loaded_mointors, load_monitors
+from gui.recording_overlay import RecordingOverlay
 
 
 class MainWindow(QMainWindow):
@@ -24,6 +29,13 @@ class MainWindow(QMainWindow):
         self.random_offset_checkbox: QCheckBox | None = None
         self.random_offset_field: QSpinBox | None = None
 
+        self.follow_mouse_radio: QRadioButton | None = None
+        self.fixed_location_radio: QRadioButton | None = None
+        self.monitor_select_combo: QComboBox | None = None
+        self.fixed_location_button: QPushButton | None = None
+        self.fixed_location_x_spinbox: QSpinBox | None = None
+        self.fixed_location_y_spinbox: QSpinBox | None = None
+
         self.mouse_button_combo: QComboBox | None = None
         self.click_type_combo: QComboBox | None = None
 
@@ -32,6 +44,9 @@ class MainWindow(QMainWindow):
 
         self.key_listener = None
         self._listen_for_keys()
+        self.mouse_recorder = MouseRecorder()
+        self.monitors: list[Monitor] = load_monitors()
+
         self._build_ui()
 
     def _listen_for_keys(self) -> keyboard.Listener:
@@ -124,6 +139,9 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(interval_group)
 
+        # type an location row
+        click_type_location_row = QHBoxLayout()
+
         # click type and mouse button
         click_type_box = QGroupBox()
         click_type_box.setContentsMargins(1,1,1,1)
@@ -134,7 +152,7 @@ class MainWindow(QMainWindow):
         mouse_button_row.setSpacing(5)
 
         mouse_button_label = QLabel("Mouse button:")
-        mouse_button_label.setFixedWidth(90)
+        mouse_button_label.setFixedWidth(75)
         mouse_button_row.addWidget(mouse_button_label)
 
         self.mouse_button_combo = QComboBox()
@@ -146,7 +164,7 @@ class MainWindow(QMainWindow):
         click_type_row.setSpacing(5)
 
         click_type_label = QLabel("Click type:")
-        click_type_label.setFixedWidth(90)
+        click_type_label.setFixedWidth(75)
         click_type_row.addWidget(click_type_label)
 
         self.click_type_combo = QComboBox()
@@ -154,9 +172,69 @@ class MainWindow(QMainWindow):
         click_type_row.addWidget(self.click_type_combo)
         click_type_box_layout.addLayout(click_type_row)
 
-        layout.addWidget(click_type_box)
+        click_type_location_row.addWidget(click_type_box)
 
+        # mouse click location
+        mouse_click_location_box = QGroupBox()
+        mouse_click_location_box.setContentsMargins(1, 1, 1, 1)
+        mouse_click_location_layout = QVBoxLayout(mouse_click_location_box)
+        mouse_click_location_layout.setSpacing(8)
 
+        mouse_click_location_btn_group = QButtonGroup()
+        
+        self.follow_mouse_radio = QRadioButton("Follow Mouse")
+        self.follow_mouse_radio.setChecked(True)
+        mouse_click_location_btn_group.addButton(self.follow_mouse_radio)
+
+        fixed_location_row = QHBoxLayout()
+        fixed_location_row.setSpacing(5)
+
+        self.fixed_location_radio = QRadioButton("Fixed Location")
+        mouse_click_location_btn_group.addButton(self.fixed_location_radio)
+        fixed_location_row.addWidget(self.fixed_location_radio)
+
+        self.monitor_select_combo = self._build_monitor_select_combo()
+        self.monitor_select_combo.currentTextChanged.connect(self._on_combo_monitor_changed)
+        fixed_location_row.addWidget(self.monitor_select_combo)
+        
+        fixed_location_row2 = QHBoxLayout()
+        fixed_location_row2.setSpacing(5)
+
+        self.fixed_location_button = QPushButton("Change Location")
+        self.fixed_location_button.clicked.connect(self._on_fixed_location_button_clicked)
+        self.fixed_location_button.setMinimumHeight(25)
+        fixed_location_row2.addWidget(self.fixed_location_button)
+
+        monitor_id = self.monitor_select_combo.currentData()
+        selected_monitor = next(monitor for monitor in self.monitors if monitor.id == monitor_id)
+
+        fixed_x_label = QLabel("x:")
+        fixed_x_label.setFixedWidth(10)
+        fixed_location_row2.addWidget(fixed_x_label)
+        
+        self.fixed_location_x_spinbox = QSpinBox()
+        self.fixed_location_x_spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
+        self.fixed_location_x_spinbox.setMinimumWidth(60)
+        self.fixed_location_x_spinbox.setRange(0, selected_monitor.scaled_width)
+        fixed_location_row2.addWidget(self.fixed_location_x_spinbox)
+
+        fixed_y_label = QLabel("y:")
+        fixed_y_label.setFixedWidth(10)
+        fixed_location_row2.addWidget(fixed_y_label)
+
+        self.fixed_location_y_spinbox = QSpinBox()
+        self.fixed_location_y_spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
+        self.fixed_location_y_spinbox.setMinimumWidth(60)
+        self.fixed_location_y_spinbox.setRange(0, selected_monitor.scaled_height)
+        fixed_location_row2.addWidget(self.fixed_location_y_spinbox)
+
+        mouse_click_location_layout.addWidget(self.follow_mouse_radio)
+        mouse_click_location_layout.addLayout(fixed_location_row)
+        mouse_click_location_layout.addLayout(fixed_location_row2)
+
+        click_type_location_row.addWidget(mouse_click_location_box)
+
+        layout.addLayout(click_type_location_row)
 
         # add other options here
 
@@ -216,6 +294,20 @@ class MainWindow(QMainWindow):
 
         return row
 
+    def _build_monitor_select_combo(self) -> QComboBox:
+        """
+        Builds the combo box for selecting monitor.
+
+        Returns:
+            combo: The combo box object.
+        """
+        combo = QComboBox()
+
+        for monitor in self.monitors:
+            combo.addItem(f"{monitor.name} ({monitor.scaled_width}x{monitor.scaled_height})", monitor.id)
+
+        return combo
+
     def _on_interval_update(self) -> None:
         """
         Update the click interval when changed.
@@ -251,10 +343,52 @@ class MainWindow(QMainWindow):
         else:
             clicker.set_random_offset(0)
 
+    def _on_combo_monitor_changed(self) -> None:
+        """
+        Updates the ranges for the spinboxes based on the sizes of the monitors
+        """
+        monitor_id = self.monitor_select_combo.currentData()
+
+        selected_monitor = next(monitor for monitor in self.monitors if monitor.id == monitor_id)
+
+        self.fixed_location_x_spinbox.setRange(0, selected_monitor.scaled_width)
+        self.fixed_location_y_spinbox.setRange(0, selected_monitor.scaled_height)
+
+
+    def _on_fixed_location_button_clicked(self) -> None:
+        # show recording overlay and get input from the overlay
+       self.recording_overlay = RecordingOverlay(self.mouse_recorder)
+       self.recording_overlay.location_selected.connect(self._on_location_selected)
+       self.recording_overlay.showFullScreen()
+       self.recording_overlay.start_recording()
+
+
+    def _on_location_selected(self, x: int, y: int) -> None:
+        self.fixed_location_x_spinbox.setValue(x)
+        self.fixed_location_y_spinbox.setValue(y)
+
+    def _on_follow_mouse_radio(self) -> None:
+        """
+        Updates the clicker to remove target 
+        """
+        clicker.clear_click_target()
+
+    def _on_fixed_location_radio(self) -> None:
+        """
+        Updates the clicker to have settings set to fixed location
+        """
+        clicker.set_click_target(self.fixed_location_x_spinbox.Value(), self.fixed_location_y_spinbox().Value)
+
     def _on_start_clicked(self) -> None:
         """
         Start the clicker enable stop button, disable stop button and minimize window if current setting update the clicktype settings.
         """
+        # handle follow mouse
+        if self.follow_mouse_radio.isChecked():
+            clicker.clear_click_target()
+        elif self.fixed_location_radio.isChecked():
+            clicker.set_click_target((self.fixed_location_x_spinbox.value(), self.fixed_location_y_spinbox.value()))
+
         clicker.set_clicking(True)
         self._update_click_type()
         self.stop_button.setEnabled(True)

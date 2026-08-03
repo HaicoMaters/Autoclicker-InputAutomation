@@ -17,6 +17,7 @@ number_of_clicks = 1
 mouse_button = mouse.Button.left
 random_offset = 0
 next_offset = 0
+click_target_location: tuple[int, int] | None = None 
 
 """
 Can work as a standalone autoclicker when ran but is restricted in use run the main for the full loadof features
@@ -94,14 +95,51 @@ def set_mouse_button(button : mouse.Button):
     global mouse_button
     mouse_button = button
 
+
+def set_click_target(target: tuple[int, int] | None):
+    """
+    Set a fixed screen location for the next click actions.
+
+    Args:
+        target: A screen coordinate tuple of (x, y), or None to use the
+            current mouse position.
+    """
+    global click_target_location
+    click_target_location = target
+
+
+def clear_click_target() -> None:
+    """
+    Remove any fixed click target so the cursor stays where it is.
+    """
+    set_click_target(None)
+
+
+def get_click_target() -> tuple[int, int] | None:
+    """
+    Return the currently configured fixed click target, if any.
+    """
+    return click_target_location
+
+
+def perform_click() -> None:
+    """
+    Move to the configured target (if present) and trigger a click.
+    """
+    global click_target_location
+    if click_target_location is not None:
+        mouse_controller.position = click_target_location
+    mouse_controller.click(mouse_button, number_of_clicks)
+
+
 def set_click_interval(interval_ms : int, interval_secs : int = 0, interval_mins : int = 0):
     """
     Set the delay between simulated clicks in milliseconds.
 
     Args:
-        interval_ms: The interval between clicks in milliseconds
-        interval_secs: The interval between clicks in seconds default as 0
-        interval_mins: The interval between clicks in minutes default as 0
+        interval_ms: The interval between clicks in milliseconds.
+        interval_secs: The interval between clicks in seconds default as 0.
+        interval_mins: The interval between clicks in minutes default as 0.
     """
     global click_interval_ms
     interval_ms = interval_mins * 60000 + interval_secs * 1000 + interval_ms
@@ -134,14 +172,15 @@ def auto_clicker():
         if clicking:
             now = time.time()
             if now - last_click_time >= (click_interval_ms + next_offset) / 1000:
-                mouse_controller.click(mouse_button, number_of_clicks)
+                perform_click()
                 last_click_time = now
+                
                 if random_offset:
                     next_offset = random.randint(-random_offset, random_offset)
                 else:
                     next_offset = 0
-        time.sleep(0.00001)
 
+        time.sleep(0.00001)
 
 def listen_for_keys(): # only for when running via clicker.py and not using main/gui
     """
