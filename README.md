@@ -2,6 +2,9 @@
 
 A lightweight autoclicker with a small GUI for controlling timing, click type, and click location. The project is still in progress, but the core automation flow is already usable.
 
+## License
+This project is licensed under the MIT License. You are free to use, modify, and redistribute it, including for commercial purposes, as long as the license notice is preserved.
+
 ## Features
 - Toggle autoclicking with a configurable hotkey
 - Choose click interval in minutes, seconds, and milliseconds
