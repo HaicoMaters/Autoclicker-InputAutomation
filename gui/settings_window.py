@@ -22,7 +22,6 @@ class SettingsWindow(QWidget):
         self.interval_field_mins: QSpinBox | None = None
         self.interval_field_secs: QSpinBox | None = None
         self.interval_field_ms: QSpinBox | None = None
-        self.always_on_top_box: QCheckBox | None = None
         self.dark_mode_box: QCheckBox | None = None
         self.auto_minimize_box: QCheckBox | None = None
         self._build_ui()
@@ -71,10 +70,6 @@ class SettingsWindow(QWidget):
         layout.addWidget(interval_group)
 
         # ---------------------------------------------- checkboxes -------------------------------------------------------------
-        self.always_on_top_box = QCheckBox("Always on top")
-        self.always_on_top_box.setChecked(bool(settings.get("always_on_top", False)))
-        layout.addWidget(self.always_on_top_box)
-
         self.dark_mode_box = QCheckBox("Dark mode")
         self.dark_mode_box.setChecked(bool(settings.get("dark_mode", True)))
         layout.addWidget(self.dark_mode_box)
@@ -172,7 +167,6 @@ class SettingsWindow(QWidget):
             click_interval_ms=interval_value_ms,
             click_interval_secs=interval_value_secs,
             click_interval_mins=interval_value_mins,
-            always_on_top=self.always_on_top_box.isChecked() if self.always_on_top_box is not None else False,
             dark_mode=self.dark_mode_box.isChecked() if self.dark_mode_box is not None else True,
             auto_minimize = self.auto_minimize_box.isChecked() if self.auto_minimize_box is not None else True,
         )
@@ -182,6 +176,11 @@ class SettingsWindow(QWidget):
             apply_theme("dark_mode")
         else:
             apply_theme("light_mode")
+
+        parent = self.parent()
+        if parent is not None and hasattr(parent, "_apply_window_settings"):
+            updated_settings = config.load_settings()
+            parent._apply_window_settings(updated_settings)
 
         self.close()
 
@@ -202,10 +201,10 @@ class SettingsWindow(QWidget):
             self.interval_field_secs.setValue(settings.get("click_interval_secs", 0))
         if self.interval_field_mins is not None:
             self.interval_field_mins.setValue(settings.get("click_interval_mins", 0))
-        if self.always_on_top_box is not None:
-            self.always_on_top_box.setChecked(False)
         if self.dark_mode_box is not None:
-            self.dark_mode_box.setChecked(True)
+            self.dark_mode_box.setChecked(bool(settings.get("dark_mode", True)))
+        if self.auto_minimize_box is not None:
+            self.auto_minimize_box.setChecked(bool(settings.get("auto_minimize", True)))
 
 
 def build_settings_window(parent: QWidget | None = None) -> SettingsWindow:
